@@ -88,6 +88,15 @@ exports.updateCategory = (req, res, next) => {
 };
 
 exports.createCategory = (req, res, next) => {
+  const c1 = {
+    name: 'clothing',
+    description: 'good quality',
+  };
+
+  const c2 = {
+    name: 'electronics',
+    description: 'good quality',
+  };
   Category.create({
     name: req.body.name,
     description: req.body.description,
