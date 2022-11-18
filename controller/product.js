@@ -1,20 +1,41 @@
-const product = require('../model/product');
+const Product = require('../model/product');
+const { validationResult } = require('express-validator');
+const { Op } = require('sequelize');
 
 exports.getProducts = (req, res, next) => {
-  product.findAll().then((products) => {
+  let totalItems;
+  let page = req.query.page || 1;
+  let limit = 5;
+
+  let minCost = req.query.minCost || Number.MIN_VALUE;
+  let maxCost = req.query.maxCost || Number.MAX_VALUE;
+
+  return Product.findAll({
+    where: {
+      cost: {
+        [Op.gte]: minCost,
+        [Op.lte]: maxCost,
+      },
+    },
+    limit: limit,
+    offset: (page - 1) * limit,
+  }).then((products) => {
     res.status(200).json({
       products,
     });
   });
+
+  Product.count().then((count) => {
+    totalItems = count;
+  });
 };
 
 exports.getProduct = (req, res, next) => {
-  product
-    .findOne({
-      where: {
-        id: req.params.id,
-      },
-    })
+  Product.findOne({
+    where: {
+      id: req.params.id,
+    },
+  })
     .then((product) => {
       if (!product) {
         return res.status(404).json({
@@ -34,12 +55,11 @@ exports.getProduct = (req, res, next) => {
 };
 
 exports.deleteProduct = (req, res, next) => {
-  product
-    .findOne({
-      where: {
-        id: req.params.id,
-      },
-    })
+  Product.findOne({
+    where: {
+      id: req.params.id,
+    },
+  })
     .then((product) => {
       if (!product) {
         return res.status(404).json({
@@ -61,12 +81,11 @@ exports.deleteProduct = (req, res, next) => {
 };
 
 exports.updateProduct = (req, res, next) => {
-  product
-    .findOne({
-      where: {
-        id: req.params.id,
-      },
-    })
+  Product.findOne({
+    where: {
+      id: req.params.id,
+    },
+  })
     .then((product) => {
       if (!product) {
         return res.status(404).json({
@@ -92,15 +111,21 @@ exports.updateProduct = (req, res, next) => {
 };
 
 exports.createProduct = (req, res, next) => {
-  product
-    .create({
-      name: req.body.name,
-      description: req.body.description,
-      cost: req.body.cost,
-    })
-    .then((result) => {
-      res.status(201).json({
-        message: 'product Created Successfully',
-      });
+  let errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    errors = errors.array();
+    if (errors[0].param == 'name') {
+      return res.status(400).json({ message: 'name cannot be empty' });
+    }
+  }
+  Product.create({
+    name: req.body.name,
+    description: req.body.description,
+    cost: req.body.cost,
+    categoryId: req.body.categoryId,
+  }).then((result) => {
+    res.status(201).json({
+      message: 'product Created Successfully',
     });
+  });
 };

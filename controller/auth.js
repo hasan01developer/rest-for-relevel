@@ -1,8 +1,21 @@
 const User = require('../model/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 
 exports.signup = (req, res, next) => {
+  let errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    errors = errors.array();
+    if (errors[0].param == 'email') {
+      return res.status(400).json({ message: 'invalid email' });
+    } else if (errors[0].param == 'password') {
+      return res
+        .status(400)
+        .json({ message: 'password should be minimum 5 characters' });
+    }
+  }
+
   User.findOne({
     where: {
       email: req.body.email,

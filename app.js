@@ -8,6 +8,7 @@ const sequelize = require('./util/database');
 const Product = require('./model/product');
 const User = require('./model/user');
 const Order = require('./model/order');
+const Category = require('./model/category');
 
 const app = express();
 
@@ -25,8 +26,10 @@ app.use((error, req, res, next) => {
 
 Product.belongsToMany(User, { through: Order });
 
+Category.hasMany(Product);
+
 sequelize
-  .sync({ force: true })
+  .sync()
   .then((result) => {
     app.listen(8080);
   })
