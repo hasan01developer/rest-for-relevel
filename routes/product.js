@@ -3,6 +3,7 @@ const { body } = require('express-validator');
 
 const productController = require('../controller/product');
 const isAuth = require('../middleware/is-auth');
+const isAuthorized = require('../middleware/is-authorized');
 
 router.get('/products', productController.getProducts);
 
@@ -13,6 +14,7 @@ router.delete('/product/:id', isAuth, productController.deleteProduct);
 router.post(
   '/product',
   isAuth,
+  isAuthorized,
   body('name').not().isEmpty(),
   productController.createProduct
 );

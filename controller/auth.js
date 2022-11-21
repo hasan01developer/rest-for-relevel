@@ -2,6 +2,9 @@ const User = require('../model/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+const Role = require('../model/role');
+const { Op } = require('sequelize');
+const Cart = require('../model/cart');
 
 exports.signup = (req, res, next) => {
   let errors = validationResult(req);
@@ -27,14 +30,32 @@ exports.signup = (req, res, next) => {
       next(error);
     } else {
       bcrypt.hash(req.body.password, 12).then((hashedPassword) => {
-        User.create({
-          name: req.body.name,
-          email: req.body.email,
-          password: hashedPassword,
-        }).then((result) => {
-          res.status(201).json({
-            message: 'Sign up successful',
-          });
+        Role.findAll({
+          where: {
+            name: {
+              [Op.or]: req.body.roles,
+            },
+          },
+        }).then((roles) => {
+          Cart.create()
+            .then((cart) => {
+              User.create({
+                name: req.body.name,
+                password: hashedPassword,
+                email: req.body.email,
+              }).then((user) => {
+                user.setRoles(roles);
+                user.setCart(cart);
+                user.save().then((result) => {
+                  res.status(201).json({
+                    message: 'Sign up successful',
+                  });
+                });
+              });
+            })
+            .catch((error) => {
+              console.log(error);
+            });
         });
       });
     }
@@ -57,7 +78,7 @@ exports.login = (req, res, next) => {
           const token = jwt.sign(
             {
               name: user.name,
-              id: user.id,
+              userId: user.id,
             },
             'cat',
             { expiresIn: '1h' }
